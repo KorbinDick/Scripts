@@ -1,25 +1,22 @@
 % Testing for making FIR Lowpass Filter (Q31) for right now
+% Only Kaiser Window is used
 
 % Complete:
 % Adjustable fs (sampling rate)
-% Adjustable fc (cutoff/corner frequency)
-% Adjustable Tap/Coefficent count
 % Adjustable filename
 % Adjustable bandpass or lowpass or highpass or stop
-% Adjustable window, kaiser, chebyshev, hamming, hann, rectangular
+% Adjustable Transition band parameters
+% Adjustable passband and stopband ripples
 
 clear
 
 % Setting up dialog box
 dlgtitle = 'FIR Q31 Filter File Generation Kaiser Window';
-
 prompt = {'Filename:'...
     'Sampling Rate(Hz):'...
     'Type of Filter: (low / high / bandpass / stop)'...
     'Transition Band(s)(Hz): (Ex. LPF -> 1000 1300, Ex. BPF -> 1000 1300 2000 2200)'...
     'Passband Ripple(s) and Stopband Attenuation(s)(dB): (Ex. LPF -> 0.5 60, Ex. BPF -> 60 0.5 60)'}; 
-
-
 definput = {'FIR_Q31_8kHz_LPF','48000', 'bandpass', '1000 1300 2000 2200', '40 0.5 40'};
 fieldsize = [1 100; 1 100; 1 100; 1 100; 1 100];
 answer = inputdlg(prompt,dlgtitle,fieldsize,definput);
@@ -51,9 +48,9 @@ filterType = lower(answer{3});
 fcuts = str2double(strsplit(answer{4}));
 attenuations = strsplit(answer{5});
 
+% Setting up kaiserord input parameters
 devs = zeros;
 numBands = length(fcuts) - 1;
-
 switch filterType
     case 'low'
         mags = [1 0];
@@ -87,9 +84,14 @@ switch filterType
 end
 
 
+% Determine number of taps, beta value, normalizied frequency range, and
+% filter type fir1 parameters
 [n,Wn,beta,ftype] = kaiserord(fcuts,mags,devs,fs);
+
+% fir1 generated FIR filter based on user inputs
 b = fir1(n,Wn,ftype,kaiser(n+1,beta),"noscale");
 
+% Plotting
 [H, f] = freqz(b,1,4096,fs);
 plot(f,20*log10(abs(H)))
 grid on
